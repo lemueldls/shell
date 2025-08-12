@@ -12,7 +12,7 @@ ShellRoot {
     Background {}
     Drawers {}
     AreaPicker {}
-    Lock {}
+    // Lock {}
 
     Shortcuts {}
 }
