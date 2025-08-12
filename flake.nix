@@ -17,11 +17,11 @@
   };
 
   outputs =
-    {
+    inputs@{
       self,
       nixpkgs,
       ...
-    }@inputs:
+    }:
     let
       forAllSystems =
         fn: nixpkgs.lib.genAttrs nixpkgs.lib.platforms.linux (system: fn nixpkgs.legacyPackages.${system});
