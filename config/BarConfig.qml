@@ -32,7 +32,7 @@ JsonObject {
         property int innerHeight: 30
         property int windowPreviewSize: 400
         property int trayMenuWidth: 300
-        property int batteryWidth: 250
+        property int batteryWidth: 320
         property int networkWidth: 320
     }
 }
