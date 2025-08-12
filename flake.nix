@@ -30,7 +30,7 @@
       formatter = forAllSystems (pkgs: pkgs.alejandra);
 
       packages = forAllSystems (pkgs: rec {
-        caelestia-shell = pkgs.callPackage ./default.nix {
+        caelestia-shell = pkgs.callPackage ./nix {
           rev = self.rev or self.dirtyRev;
           quickshell = inputs.quickshell.packages.${pkgs.system}.default.override {
             withX11 = false;
@@ -51,10 +51,11 @@
             inputsFrom = [ shell ];
             packages = with pkgs; [
               material-symbols
-              nerd-fonts.jetbrains-mono
             ];
             CAELESTIA_BD_PATH = "${shell}/bin/beat_detector";
           };
       });
+
+      homeManagerModules.default = import ./nix/hm-module.nix self;
     };
 }

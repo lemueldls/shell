@@ -6,6 +6,7 @@ import qs.config
 import qs.utils
 import Quickshell
 import Quickshell.Widgets
+import Quickshell.Services.UPower
 import QtQuick
 import QtQuick.Layouts
 
@@ -87,12 +88,26 @@ ColumnLayout {
             Layout.leftMargin: iconLoader.active ? 0 : width * 0.1
             spacing: Appearance.spacing.normal
 
-            FetchText {
-                text: `OS  : ${SysInfo.osPrettyName || SysInfo.osName}`
+            Loader {
+                Layout.fillWidth: true
+                asynchronous: true
+                active: !batLoader.active && root.height > 200
+                visible: active
+
+                sourceComponent: FetchText {
+                    text: `OS  : ${SysInfo.osPrettyName || SysInfo.osName}`
+                }
             }
 
-            FetchText {
-                text: `WM  : ${SysInfo.wm}`
+            Loader {
+                Layout.fillWidth: true
+                asynchronous: true
+                active: root.height > (batLoader.active ? 200 : 110)
+                visible: active
+
+                sourceComponent: FetchText {
+                    text: `WM  : ${SysInfo.wm}`
+                }
             }
 
             FetchText {
@@ -102,6 +117,19 @@ ColumnLayout {
             FetchText {
                 text: `UP  : ${SysInfo.uptime}`
             }
+
+            Loader {
+                id: batLoader
+
+                Layout.fillWidth: true
+                asynchronous: true
+                active: UPower.displayDevice.isLaptopBattery
+                visible: active
+
+                sourceComponent: FetchText {
+                    text: `BATT: ${UPower.onBattery ? "" : "(+) "}${Math.round(UPower.displayDevice.percentage * 100)}%`
+                }
+            }
         }
     }
 
@@ -109,14 +137,14 @@ ColumnLayout {
         Layout.alignment: Qt.AlignHCenter
 
         asynchronous: true
-        active: root.height > 220
+        active: root.height > 180
         visible: active
 
         sourceComponent: RowLayout {
             spacing: Appearance.spacing.large
 
             Repeater {
-                model: Math.min(8, root.width / (Appearance.font.size.larger * 2 + Appearance.spacing.large))
+                model: Math.max(0, Math.min(8, root.width / (Appearance.font.size.larger * 2 + Appearance.spacing.large)))
 
                 StyledRect {
                     required property int index
