@@ -4,25 +4,10 @@ JsonObject {
     property bool persistent: true
     property bool showOnHover: true
     property int dragThreshold: 20
-<<<<<<< HEAD
-    property Workspaces workspaces
-    property Status status
-    property Sizes sizes
-
-    workspaces: Workspaces {
-    }
-
-    status: Status {
-    }
-
-    sizes: Sizes {
-    }
-=======
     property Workspaces workspaces: Workspaces {}
     property Tray tray: Tray {}
     property Status status: Status {}
     property Sizes sizes: Sizes {}
->>>>>>> fa39593ca497c27ca8631091a75d883e4e3c46f2
 
     property list<var> entries: [
         {
