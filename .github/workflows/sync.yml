@@ -29,8 +29,13 @@ jobs:
 
       - name: Sync upstream
         run: |
+          git config --global pull.rebase false
+          git config --global pull.ff true
           git remote add upstream git@github.com:caelestia-dots/shell.git
           git pull upstream main
+
+      - name: Add and commit changes
+        run: |
           git add -A
           git commit -S -m "chore: sync upstream" || echo "No changes to commit"
           git push
