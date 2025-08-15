@@ -1,14 +1,17 @@
-self: {
+self:
+{
   config,
   pkgs,
   lib,
   ...
-}: let
+}:
+let
   cli-default = self.inputs.caelestia-cli.packages.${pkgs.system}.default;
   shell-default = self.packages.${pkgs.system}.with-cli;
 
   cfg = config.programs.caelestia;
-in {
+in
+{
   options = with lib; {
     programs.caelestia = {
       enable = mkEnableOption "Enable Caelestia shell";
@@ -19,7 +22,7 @@ in {
       };
       settings = mkOption {
         type = types.attrs;
-        default = {};
+        default = { };
         description = "Caelestia shell settings";
       };
       extraConfig = mkOption {
@@ -38,16 +41,17 @@ in {
     };
   };
 
-  config = let
-    cli = cfg.cli.package or cli-default;
-    shell = cfg.package or shell-default;
-  in
+  config =
+    let
+      cli = cfg.cli.package or cli-default;
+      shell = cfg.package or shell-default;
+    in
     lib.mkIf cfg.enable {
       systemd.user.services.caelestia = {
         Unit = {
           Description = "Caelestia Shell Service";
-          After = ["graphical-session.target"];
-          PartOf = ["graphical-session.target"];
+          After = [ "graphical-session.target" ];
+          PartOf = [ "graphical-session.target" ];
         };
 
         Service = {
@@ -64,19 +68,16 @@ in {
         };
 
         Install = {
-          WantedBy = ["graphical-session.target"];
+          WantedBy = [ "graphical-session.target" ];
         };
       };
 
-      xdg.configFile."caelestia/shell.json".text = let
-        extraConfig =
-          if cfg.extraConfig != ""
-          then cfg.extraConfig
-          else "{}";
-      in
-        builtins.toJSON (lib.recursiveUpdate
-          (cfg.settings or {}) (builtins.fromJSON extraConfig));
+      xdg.configFile."caelestia/shell.json".text =
+        let
+          extraConfig = if cfg.extraConfig != "" then cfg.extraConfig else "{}";
+        in
+        builtins.toJSON (lib.recursiveUpdate (cfg.settings or { }) (builtins.fromJSON extraConfig));
 
-      home.packages = [shell] ++ lib.optional cfg.cli.enable cli;
+      home.packages = [ shell ] ++ lib.optional cfg.cli.enable cli;
     };
 }

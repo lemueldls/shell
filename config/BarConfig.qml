@@ -4,9 +4,18 @@ JsonObject {
     property bool persistent: true
     property bool showOnHover: true
     property int dragThreshold: 20
-    property Workspaces workspaces: Workspaces {}
-    property Status status: Status {}
-    property Sizes sizes: Sizes {}
+    property Workspaces workspaces
+    property Status status
+    property Sizes sizes
+
+    workspaces: Workspaces {
+    }
+
+    status: Status {
+    }
+
+    sizes: Sizes {
+    }
 
     component Workspaces: JsonObject {
         property int shown: 5
@@ -32,7 +41,8 @@ JsonObject {
         property int innerHeight: 30
         property int windowPreviewSize: 400
         property int trayMenuWidth: 300
-        property int batteryWidth: 320
+        property int batteryWidth: 250
         property int networkWidth: 320
     }
+
 }
