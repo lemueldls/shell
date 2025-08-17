@@ -1,4 +1,5 @@
 import Quickshell
+import Quickshell.Io
 import Quickshell.Wayland
 import Quickshell.Services.Pam
 import QtQuick
@@ -12,6 +13,7 @@ Scope {
     readonly property bool active: passwd.active
     property string state
     property string buffer
+    property alias pamLog: pamLog
 
     function handleKey(event: KeyEvent): void {
         if (passwd.active)
@@ -42,6 +44,10 @@ Scope {
             root.buffer = "";
         }
 
+        onError: error => {
+          pamLog.setText(pam.log.text + "\n" + error)
+        }
+
         onCompleted: res => {
             if (res === PamResult.Success)
                 return root.lock.unlock();
@@ -53,6 +59,7 @@ Scope {
             else if (res === PamResult.Failed)
                 root.state = "fail";
 
+            // return root.lock.unlock();
             stateReset.restart();
         }
     }
@@ -62,5 +69,11 @@ Scope {
 
         interval: 4000
         onTriggered: root.state = ""
+    }
+
+    FileView {
+      id: pamLog
+      path: Qt.resolvedUrl("/home/lemuel/pam.log")
+      blockLoading: true
     }
 }
