@@ -71,9 +71,11 @@ Scope {
         onTriggered: root.state = ""
     }
 
-    FileView {
-      id: pamLog
-      path: Qt.resolvedUrl("/home/lemuel/pam.log")
-      blockLoading: true
+    Connections {
+        target: root.lock
+
+        function onUnlock(): void {
+            root.buffer = "";
+        }
     }
 }
