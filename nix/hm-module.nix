@@ -71,7 +71,7 @@ in
           RestartSec = "5s";
           TimeoutStopSec = "5s";
           Environment = [
-            "QT_QPA_PLATFORM=wayland"
+            "QT_QPA_PLATFORM=wayland;xcb"
           ];
 
           Slice = "session.slice";
