@@ -50,10 +50,9 @@
           in
           pkgs.mkShellNoCC {
             inputsFrom = [ shell ];
-            packages = with pkgs; [
-              material-symbols
-            ];
+            packages = with pkgs; [ material-symbols ];
             CAELESTIA_BD_PATH = "${shell}/bin/beat_detector";
+            CAELESTIA_II_PATH = "${shell}/bin/inhibit_idle";
           };
       });
 
