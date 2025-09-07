@@ -4,6 +4,7 @@ import qs.components
 import qs.components.filedialog
 import qs.config
 import qs.utils
+import Caelestia
 import Quickshell
 import Quickshell.Hyprland
 import QtQuick
@@ -14,14 +15,17 @@ Item {
     required property PersistentProperties visibilities
     readonly property PersistentProperties state: PersistentProperties {
         property int currentTab
+        property date currentDate: new Date()
 
         readonly property FileDialog facePicker: FileDialog {
             title: qsTr("Select a profile picture")
             filterLabel: qsTr("Image files")
             filters: Images.validImageExtensions
             onAccepted: path => {
-                Paths.copy(path, `${Paths.home}/.face`);
-                Quickshell.execDetached(["notify-send", "-a", "caelestia-shell", "-u", "low", "-h", `STRING:image-path:${path}`, "Profile picture changed", `Profile picture changed to ${Paths.shortenHome(path)}`]);
+                if (CUtils.copyFile(`file://${path}`, `${Paths.home}/.face`))
+                    Quickshell.execDetached(["notify-send", "-a", "caelestia-shell", "-u", "low", "-h", `STRING:image-path:${path}`, "Profile picture changed", `Profile picture changed to ${Paths.shortenHome(path)}`]);
+                else
+                    Quickshell.execDetached(["notify-send", "-a", "caelestia-shell", "-u", "critical", "Unable to change profile picture", `Failed to change profile picture to ${Paths.shortenHome(path)}`]);
             }
         }
     }
