@@ -1,9 +1,8 @@
 import qs.components
-import qs.components.misc
 import qs.services
 import qs.config
 import qs.utils
-import Caelestia
+import Caelestia.Services
 import QtQuick
 import QtQuick.Shapes
 
@@ -33,8 +32,8 @@ Item {
         onTriggered: Players.active?.positionChanged()
     }
 
-    Ref {
-        service: BeatTracker
+    ServiceRef {
+        service: Audio.beatTracker
     }
 
     Shape {
@@ -214,7 +213,7 @@ Item {
         anchors.margins: Appearance.padding.large * 2
 
         playing: Players.active?.isPlaying ?? false
-        speed: BeatTracker.bpm / 300
+        speed: Audio.beatTracker.bpm / 300
         source: Paths.absolutePath(Config.paths.mediaGif)
         asynchronous: true
         fillMode: AnimatedImage.PreserveAspectFit

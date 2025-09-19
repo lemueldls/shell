@@ -1,8 +1,7 @@
 #pragma once
 
-#include <QFuture>
-#include <QObject>
-#include <QtQuick/QQuickItem>
+#include <QtQuick/qquickitem.h>
+#include <qobject.h>
 #include <qqmlintegration.h>
 
 namespace caelestia {
@@ -19,7 +18,8 @@ class CachingImageManager : public QObject {
 
 public:
     explicit CachingImageManager(QObject* parent = nullptr)
-        : QObject(parent) {}
+        : QObject(parent)
+        , m_item(nullptr) {}
 
     [[nodiscard]] QQuickItem* item() const;
     void setItem(QQuickItem* item);

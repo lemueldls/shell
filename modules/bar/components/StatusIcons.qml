@@ -115,6 +115,18 @@ StyledRect {
             }
         }
 
+        // Microphone icon
+        WrappedLoader {
+            name: "audio"
+            active: Config.bar.status.showMicrophone
+
+            sourceComponent: MaterialIcon {
+                animate: true
+                text: Icons.getMicVolumeIcon(Audio.sourceVolume, Audio.sourceMuted)
+                color: root.colour
+            }
+        }
+
         // Keyboard layout icon
         WrappedLoader {
             name: "kblayout"
@@ -175,12 +187,12 @@ StyledRect {
                         required property BluetoothDevice modelData
 
                         animate: true
-                        text: Icons.getBluetoothIcon(modelData.icon)
+                        text: Icons.getBluetoothIcon(modelData?.icon)
                         color: root.colour
                         fill: 1
 
                         SequentialAnimation on opacity {
-                            running: device.modelData.state !== BluetoothDeviceState.Connected
+                            running: device.modelData?.state !== BluetoothDeviceState.Connected
                             alwaysRunToEnd: true
                             loops: Animation.Infinite
 
