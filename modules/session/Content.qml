@@ -51,11 +51,11 @@ Column {
     //     sourceSize.width: width
     //     sourceSize.height: height
 
-        playing: visible
-        asynchronous: true
-        speed: 0.7
-        source: Paths.absolutePath(Config.paths.sessionGif)
-    }
+    //     playing: visible
+    //     asynchronous: true
+    //     speed: 0.7
+    //     source: Paths.absolutePath(Config.paths.sessionGif)
+    // }
 
     SessionButton {
         id: hibernate

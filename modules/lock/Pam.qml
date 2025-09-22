@@ -16,7 +16,6 @@ Scope {
     property string state
     property string fprintState
     property string buffer
-    property alias pamLog: pamLog
 
     signal flashMsg
 
@@ -57,10 +56,6 @@ Scope {
 
             respond(root.buffer);
             root.buffer = "";
-        }
-
-        onError: error => {
-          pamLog.setText(pam.log.text + "\n" + error)
         }
 
         onCompleted: res => {
