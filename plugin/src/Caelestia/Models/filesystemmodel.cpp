@@ -4,11 +4,11 @@
 #include <qfuturewatcher.h>
 #include <qtconcurrentrun.h>
 
-namespace caelestia {
+namespace caelestia::models {
 
 FileSystemEntry::FileSystemEntry(const QString& path, const QString& relativePath, QObject* parent)
     : QObject(parent)
-    , m_fileInfo(QFileInfo(path))
+    , m_fileInfo(path)
     , m_path(path)
     , m_relativePath(relativePath)
     , m_isImageInitialised(false)
@@ -64,6 +64,14 @@ QString FileSystemEntry::mimeType() const {
     return m_mimeType;
 }
 
+void FileSystemEntry::updateRelativePath(const QDir& dir) {
+    const auto relPath = dir.relativeFilePath(m_path);
+    if (m_relativePath != relPath) {
+        m_relativePath = relPath;
+        emit relativePathChanged();
+    }
+}
+
 FileSystemModel::FileSystemModel(QObject* parent)
     : QAbstractListModel(parent)
     , m_recursive(false)
@@ -105,6 +113,11 @@ void FileSystemModel::setPath(const QString& path) {
     emit pathChanged();
 
     m_dir.setPath(m_path);
+
+    for (const auto& entry : std::as_const(m_entries)) {
+        entry->updateRelativePath(m_dir);
+    }
+
     update();
 }
 
@@ -256,8 +269,8 @@ void FileSystemModel::updateEntries() {
             beginResetModel();
             qDeleteAll(m_entries);
             m_entries.clear();
-            emit entriesChanged();
             endResetModel();
+            emit entriesChanged();
         }
 
         return;
@@ -276,8 +289,11 @@ void FileSystemModel::updateEntriesForDir(const QString& dir) {
     const auto showHidden = m_showHidden;
     const auto filter = m_filter;
     const auto nameFilters = m_nameFilters;
-    const auto oldEntries = m_entries;
-    const auto baseDir = m_dir;
+
+    QSet<QString> oldPaths;
+    for (const auto& entry : std::as_const(m_entries)) {
+        oldPaths << entry->path();
+    }
 
     const auto future = QtConcurrent::run([=](QPromise<QPair<QSet<QString>, QSet<QString>>>& promise) {
         const auto flags = recursive ? QDirIterator::Subdirectories : QDirIterator::NoIteratorFlags;
@@ -286,7 +302,8 @@ void FileSystemModel::updateEntriesForDir(const QString& dir) {
 
         if (filter == Images) {
             QStringList extraNameFilters = nameFilters;
-            for (const auto& format : QImageReader::supportedImageFormats()) {
+            const auto formats = QImageReader::supportedImageFormats();
+            for (const auto& format : formats) {
                 extraNameFilters << "*." + format;
             }
 
@@ -336,11 +353,6 @@ void FileSystemModel::updateEntriesForDir(const QString& dir) {
             newPaths.insert(path);
         }
 
-        QSet<QString> oldPaths;
-        for (const auto& entry : oldEntries) {
-            oldPaths.insert(entry->path());
-        }
-
         if (promise.isCanceled() || newPaths == oldPaths) {
             return;
         }
@@ -381,9 +393,10 @@ void FileSystemModel::applyChanges(const QSet<QString>& removedPaths, const QSet
     }
     std::sort(removedIndices.begin(), removedIndices.end(), std::greater<int>());
 
+    // Batch remove old entries
     int start = -1;
     int end = -1;
-    for (int idx : removedIndices) {
+    for (int idx : std::as_const(removedIndices)) {
         if (start == -1) {
             start = idx;
             end = idx;
@@ -392,7 +405,6 @@ void FileSystemModel::applyChanges(const QSet<QString>& removedPaths, const QSet
         } else {
             beginRemoveRows(QModelIndex(), end, start);
             for (int i = start; i >= end; --i) {
-                emit removed(m_entries[i]->path());
                 m_entries.takeAt(i)->deleteLater();
             }
             endRemoveRows();
@@ -404,56 +416,51 @@ void FileSystemModel::applyChanges(const QSet<QString>& removedPaths, const QSet
     if (start != -1) {
         beginRemoveRows(QModelIndex(), end, start);
         for (int i = start; i >= end; --i) {
-            emit removed(m_entries[i]->path());
             m_entries.takeAt(i)->deleteLater();
         }
         endRemoveRows();
     }
 
+    // Create new entries
     QList<FileSystemEntry*> newEntries;
     for (const auto& path : addedPaths) {
         newEntries << new FileSystemEntry(path, m_dir.relativeFilePath(path), this);
     }
-    const auto comp = [this](const FileSystemEntry* a, const FileSystemEntry* b) {
+    std::sort(newEntries.begin(), newEntries.end(), [this](const FileSystemEntry* a, const FileSystemEntry* b) {
         return compareEntries(a, b);
-    };
-    std::sort(newEntries.begin(), newEntries.end(), comp);
+    });
 
+    // Batch insert new entries
     int insertStart = -1;
-    int prevRow = -1;
     QList<FileSystemEntry*> batchItems;
-    for (const auto& entry : newEntries) {
-        const auto it = std::lower_bound(m_entries.begin(), m_entries.end(), entry, comp);
-        int row = static_cast<int>(it - m_entries.begin());
+    for (const auto& entry : std::as_const(newEntries)) {
+        const auto it = std::lower_bound(
+            m_entries.begin(), m_entries.end(), entry, [this](const FileSystemEntry* a, const FileSystemEntry* b) {
+                return compareEntries(a, b);
+            });
+        const auto row = static_cast<int>(it - m_entries.begin());
 
         if (insertStart == -1) {
             insertStart = row;
-            prevRow = row;
-            batchItems.clear();
             batchItems << entry;
-        } else if (row == prevRow + 1) {
-            prevRow = row;
+        } else if (row == insertStart + batchItems.size()) {
             batchItems << entry;
         } else {
-            beginInsertRows(QModelIndex(), insertStart, static_cast<int>(insertStart + batchItems.size() - 1));
+            beginInsertRows(QModelIndex(), insertStart, insertStart + static_cast<int>(batchItems.size()) - 1);
             for (int i = 0; i < batchItems.size(); ++i) {
                 m_entries.insert(insertStart + i, batchItems[i]);
-                emit added(batchItems[i]);
             }
             endInsertRows();
 
             insertStart = row;
-            prevRow = row;
             batchItems.clear();
             batchItems << entry;
         }
-        prevRow = static_cast<int>(m_entries.indexOf(entry));
     }
     if (!batchItems.isEmpty()) {
-        beginInsertRows(QModelIndex(), insertStart, static_cast<int>(insertStart + batchItems.size() - 1));
+        beginInsertRows(QModelIndex(), insertStart, insertStart + static_cast<int>(batchItems.size()) - 1);
         for (int i = 0; i < batchItems.size(); ++i) {
             m_entries.insert(insertStart + i, batchItems[i]);
-            emit added(batchItems[i]);
         }
         endInsertRows();
     }
@@ -465,7 +472,8 @@ bool FileSystemModel::compareEntries(const FileSystemEntry* a, const FileSystemE
     if (a->isDir() != b->isDir()) {
         return m_sortReverse ^ a->isDir();
     }
-    return m_sortReverse ^ (a->relativePath().localeAwareCompare(b->relativePath()) < 0);
+    const auto cmp = a->relativePath().localeAwareCompare(b->relativePath());
+    return m_sortReverse ? cmp > 0 : cmp < 0;
 }
 
-} // namespace caelestia
+} // namespace caelestia::models

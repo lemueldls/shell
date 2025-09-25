@@ -54,6 +54,11 @@
     fontDirectories = [ material-symbols ];
   };
 
+  cmakeBuildType =
+    if debug
+    then "Debug"
+    else "RelWithDebInfo";
+
   cmakeVersionFlags = [
     (lib.cmakeFeature "VERSION" version)
     (lib.cmakeFeature "GIT_REVISION" rev)
@@ -61,6 +66,7 @@
   ];
 
   extras = stdenv.mkDerivation {
+    inherit cmakeBuildType;
     name = "caelestia-extras${lib.optionalString debug "-debug"}";
     src = lib.fileset.toSource {
       root = ./..;
@@ -78,6 +84,7 @@
   };
 
   plugin = stdenv.mkDerivation {
+    inherit cmakeBuildType;
     name = "caelestia-qml-plugin${lib.optionalString debug "-debug"}";
     src = lib.fileset.toSource {
       root = ./..;
@@ -97,7 +104,7 @@
   };
 in
   stdenv.mkDerivation {
-    inherit version;
+    inherit version cmakeBuildType;
     pname = "caelestia-shell${lib.optionalString debug "-debug"}";
     src = ./..;
 
@@ -105,10 +112,6 @@ in
     buildInputs = [quickshell extras plugin xkeyboard-config qt6.qtbase];
     propagatedBuildInputs = runtimeDeps;
 
-    cmakeBuildType =
-      if debug
-      then "Debug"
-      else "RelWithDebInfo";
     cmakeFlags =
       [
         (lib.cmakeFeature "ENABLE_MODULES" "shell")

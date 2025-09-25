@@ -4,7 +4,7 @@
 #include <cava/cavacore.h>
 #include <qqmlintegration.h>
 
-namespace caelestia {
+namespace caelestia::services {
 
 class CavaProcessor : public AudioProcessor {
     Q_OBJECT
@@ -12,6 +12,8 @@ class CavaProcessor : public AudioProcessor {
 public:
     explicit CavaProcessor(QObject* parent = nullptr);
     ~CavaProcessor();
+
+    void setBars(int bars);
 
 signals:
     void valuesChanged(QVector<double> values);
@@ -26,8 +28,6 @@ private:
 
     int m_bars;
     QVector<double> m_values;
-
-    Q_INVOKABLE void setBars(int bars);
 
     void reload();
     void initCava();
@@ -61,4 +61,4 @@ private:
     void updateValues(QVector<double> values);
 };
 
-} // namespace caelestia
+} // namespace caelestia::services

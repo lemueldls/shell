@@ -15,12 +15,20 @@ StyledRect {
 
     required property string modelData
     required property Props props
+    required property Flickable container
+    required property var visibilities
 
-    readonly property list<var> notifs: Notifs.list.filter(notif => notif.appName === modelData).reverse()
-    readonly property string image: notifs.find(n => n.image.length > 0)?.image ?? ""
-    readonly property string appIcon: notifs.find(n => n.appIcon.length > 0)?.appIcon ?? ""
-    readonly property int urgency: notifs.some(n => n.urgency === NotificationUrgency.Critical) ? NotificationUrgency.Critical : notifs.some(n => n.urgency === NotificationUrgency.Normal) ? NotificationUrgency.Normal : NotificationUrgency.Low
+    readonly property list<var> notifs: Notifs.list.filter(n => n.appName === modelData)
+    readonly property int notifCount: notifs.reduce((acc, n) => n.closed ? acc : acc + 1, 0)
+    readonly property string image: notifs.find(n => !n.closed && n.image.length > 0)?.image ?? ""
+    readonly property string appIcon: notifs.find(n => !n.closed && n.appIcon.length > 0)?.appIcon ?? ""
+    readonly property int urgency: notifs.some(n => !n.closed && n.urgency === NotificationUrgency.Critical) ? NotificationUrgency.Critical : notifs.some(n => n.urgency === NotificationUrgency.Normal) ? NotificationUrgency.Normal : NotificationUrgency.Low
 
+    readonly property int nonAnimHeight: {
+        const headerHeight = header.implicitHeight + (root.expanded ? Math.round(Appearance.spacing.small / 2) : 0);
+        const columnHeight = headerHeight + notifList.nonAnimHeight + column.Layout.topMargin + column.Layout.bottomMargin;
+        return Math.round(Math.max(Config.notifs.sizes.image, columnHeight) + Appearance.padding.normal * 2);
+    }
     readonly property bool expanded: props.expandedNotifs.includes(modelData)
 
     function toggleExpand(expand: bool): void {
@@ -32,10 +40,16 @@ StyledRect {
         }
     }
 
+    Component.onDestruction: {
+        if (notifCount === 0 && expanded)
+            props.expandedNotifs.splice(props.expandedNotifs.indexOf(modelData), 1);
+    }
+
     anchors.left: parent?.left
     anchors.right: parent?.right
     implicitHeight: content.implicitHeight + Appearance.padding.normal * 2
 
+    clip: true
     radius: Appearance.rounding.normal
     color: Colours.layer(Colours.palette.m3surfaceContainer, 2)
 
@@ -133,6 +147,8 @@ StyledRect {
             spacing: 0
 
             RowLayout {
+                id: header
+
                 Layout.bottomMargin: root.expanded ? Math.round(Appearance.spacing.small / 2) : 0
                 Layout.fillWidth: true
                 spacing: Appearance.spacing.smaller
@@ -147,7 +163,7 @@ StyledRect {
 
                 StyledText {
                     animate: true
-                    text: root.notifs[0]?.timeStr ?? ""
+                    text: root.notifs.find(n => !n.closed)?.timeStr ?? ""
                     color: Colours.palette.m3outline
                     font.pointSize: Appearance.font.size.small
                 }
@@ -178,16 +194,31 @@ StyledRect {
 
                             Layout.leftMargin: Appearance.padding.small / 2
                             animate: true
-                            text: root.notifs.reduce((acc, n) => n.closed ? acc : acc + 1, 0)
+                            text: root.notifCount
                             color: root.urgency === NotificationUrgency.Critical ? Colours.palette.m3onError : Colours.palette.m3onSurface
                             font.pointSize: Appearance.font.size.small
                         }
 
                         MaterialIcon {
                             Layout.rightMargin: -Appearance.padding.small / 2
-                            animate: true
-                            text: root.expanded ? "expand_less" : "expand_more"
+                            text: "expand_more"
                             color: root.urgency === NotificationUrgency.Critical ? Colours.palette.m3onError : Colours.palette.m3onSurface
+                            rotation: root.expanded ? 180 : 0
+                            Layout.topMargin: root.expanded ? -Math.floor(Appearance.padding.smaller / 2) : 0
+
+                            Behavior on rotation {
+                                Anim {
+                                    duration: Appearance.anim.durations.expressiveDefaultSpatial
+                                    easing.bezierCurve: Appearance.anim.curves.expressiveDefaultSpatial
+                                }
+                            }
+
+                            Behavior on Layout.topMargin {
+                                Anim {
+                                    duration: Appearance.anim.durations.expressiveDefaultSpatial
+                                    easing.bezierCurve: Appearance.anim.curves.expressiveDefaultSpatial
+                                }
+                            }
                         }
                     }
                 }
@@ -198,9 +229,13 @@ StyledRect {
             }
 
             NotifGroupList {
+                id: notifList
+
                 props: root.props
                 notifs: root.notifs
                 expanded: root.expanded
+                container: root.container
+                visibilities: root.visibilities
                 onRequestToggleExpand: expand => root.toggleExpand(expand)
             }
         }

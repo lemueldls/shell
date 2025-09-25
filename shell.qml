@@ -26,6 +26,9 @@ ShellRoot {
     Shortcuts {
     }
 
+    BatteryMonitor {
+    }
+
     IdleMonitors {
         lock: lock
     }

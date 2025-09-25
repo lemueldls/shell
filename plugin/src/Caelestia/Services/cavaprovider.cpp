@@ -7,7 +7,7 @@
 #include <cstddef>
 #include <qdebug.h>
 
-namespace caelestia {
+namespace caelestia::services {
 
 CavaProcessor::CavaProcessor(QObject* parent)
     : AudioProcessor(parent)
@@ -124,7 +124,8 @@ void CavaProvider::setBars(int bars) {
     emit barsChanged();
     emit valuesChanged();
 
-    QMetaObject::invokeMethod(m_processor, "setBars", Qt::QueuedConnection, Q_ARG(int, bars));
+    QMetaObject::invokeMethod(
+        static_cast<CavaProcessor*>(m_processor), &CavaProcessor::setBars, Qt::QueuedConnection, bars);
 }
 
 QVector<double> CavaProvider::values() const {
@@ -138,4 +139,4 @@ void CavaProvider::updateValues(QVector<double> values) {
     }
 }
 
-} // namespace caelestia
+} // namespace caelestia::services

@@ -5,7 +5,7 @@
 #include <qdebug.h>
 #include <qthread.h>
 
-namespace caelestia {
+namespace caelestia::services {
 
 AudioProcessor::AudioProcessor(QObject* parent)
     : QObject(parent) {}
@@ -21,7 +21,7 @@ void AudioProcessor::init() {
 }
 
 void AudioProcessor::start() {
-    QMetaObject::invokeMethod(&AudioCollector::instance(), &AudioCollector::ref);
+    QMetaObject::invokeMethod(&AudioCollector::instance(), &AudioCollector::ref, Qt::QueuedConnection, this);
     if (m_timer) {
         m_timer->start();
     }
@@ -31,7 +31,7 @@ void AudioProcessor::stop() {
     if (m_timer) {
         m_timer->stop();
     }
-    QMetaObject::invokeMethod(&AudioCollector::instance(), &AudioCollector::unref);
+    QMetaObject::invokeMethod(&AudioCollector::instance(), &AudioCollector::unref, Qt::QueuedConnection, this);
 }
 
 AudioProvider::AudioProvider(QObject* parent)
@@ -75,4 +75,4 @@ void AudioProvider::stop() {
     }
 }
 
-} // namespace caelestia
+} // namespace caelestia::services

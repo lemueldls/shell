@@ -1,5 +1,8 @@
 pragma Singleton
 
+import qs.services
+import qs.config
+import Caelestia
 import Quickshell
 import Quickshell.Io
 import QtQuick
@@ -10,20 +13,34 @@ Singleton {
     property alias enabled: props.enabled
 
     function setDynamicConfs(): void {
-        Quickshell.execDetached(["hyprctl", "--batch", "keyword animations:enabled 0;keyword decoration:shadow:enabled 0;keyword decoration:blur:enabled 0;keyword general:gaps_in 0;keyword general:gaps_out 0;keyword general:border_size 1;keyword decoration:rounding 0;keyword general:allow_tearing 1"]);
+        Hypr.extras.applyOptions({
+            "animations:enabled": 0,
+            "decoration:shadow:enabled": 0,
+            "decoration:blur:enabled": 0,
+            "general:gaps_in": 0,
+            "general:gaps_out": 0,
+            "general:border_size": 1,
+            "decoration:rounding": 0,
+            "general:allow_tearing": 1
+        });
     }
 
     onEnabledChanged: {
-        if (enabled)
+        if (enabled) {
             setDynamicConfs();
-        else
-            Quickshell.execDetached(["hyprctl", "reload"]);
+            if (Config.utilities.toasts.gameModeChanged)
+                Toaster.toast(qsTr("Game mode enabled"), qsTr("Disabled Hyprland animations, blur, gaps and shadows"), "gamepad");
+        } else {
+            Hypr.extras.message("reload");
+            if (Config.utilities.toasts.gameModeChanged)
+                Toaster.toast(qsTr("Game mode disabled"), qsTr("Hyprland settings restored"), "gamepad");
+        }
     }
 
     PersistentProperties {
         id: props
 
-        property bool enabled
+        property bool enabled: Hypr.options["animations:enabled"] === 0
 
         reloadableId: "gameMode"
     }
@@ -34,14 +51,6 @@ Singleton {
         function onConfigReloaded(): void {
             if (props.enabled)
                 root.setDynamicConfs();
-        }
-    }
-
-    Process {
-        running: true
-        command: ["hyprctl", "getoption", "animations:enabled", "-j"]
-        stdout: StdioCollector {
-            onStreamFinished: props.enabled = JSON.parse(text).int === 0
         }
     }
 

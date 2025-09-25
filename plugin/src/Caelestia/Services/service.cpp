@@ -3,36 +3,24 @@
 #include <qdebug.h>
 #include <qpointer.h>
 
-namespace caelestia {
+namespace caelestia::services {
 
 Service::Service(QObject* parent)
-    : QObject(parent)
-    , m_refCount(0) {}
+    : QObject(parent) {}
 
-int Service::refCount() const {
-    return m_refCount;
-}
-
-void Service::ref() {
-    if (m_refCount == 0) {
+void Service::ref(QObject* sender) {
+    if (m_refs.isEmpty()) {
         start();
     }
 
-    m_refCount++;
-    emit refCountChanged();
+    QObject::connect(sender, &QObject::destroyed, this, &Service::unref);
+    m_refs << sender;
 }
 
-void Service::unref() {
-    if (m_refCount == 0) {
-        return;
-    }
-
-    m_refCount--;
-    emit refCountChanged();
-
-    if (m_refCount == 0) {
+void Service::unref(QObject* sender) {
+    if (m_refs.remove(sender) && m_refs.isEmpty()) {
         stop();
     }
 }
 
-} // namespace caelestia
+} // namespace caelestia::services
