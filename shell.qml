@@ -19,9 +19,9 @@ ShellRoot {
     AreaPicker {
     }
 
-    Lock {
-        id: lock
-    }
+    // Lock {
+    //     id: lock
+    // }
 
     Shortcuts {
     }
@@ -29,8 +29,8 @@ ShellRoot {
     BatteryMonitor {
     }
 
-    IdleMonitors {
-        lock: lock
-    }
+    // IdleMonitors {
+    //     lock: lock
+    // }
 
 }

@@ -57,6 +57,7 @@
               shell.extras
             ];
             packages = with pkgs; [
+              clazy
               material-symbols
               rubik
               nerd-fonts.caskaydia-cove
