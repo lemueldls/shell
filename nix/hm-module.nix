@@ -12,9 +12,13 @@ let
   shell-default = self.packages.${system}.with-cli;
 
   cfg = config.programs.caelestia;
-in {
+in
+{
   imports = [
-    (lib.mkRenamedOptionModule ["programs" "caelestia" "environment"] ["programs" "caelestia" "systemd" "environment"])
+    (lib.mkRenamedOptionModule
+      [ "programs" "caelestia" "environment" ]
+      [ "programs" "caelestia" "systemd" "environment" ]
+    )
   ];
   options = with lib; {
     programs.caelestia = {
@@ -40,7 +44,7 @@ in {
         environment = mkOption {
           type = types.listOf types.str;
           description = "Extra Environment variables to pass to the Caelestia shell systemd service.";
-          default = [];
+          default = [ ];
           example = [
             "QT_QPA_PLATFORMTHEME=gtk3"
           ];
@@ -70,24 +74,25 @@ in {
         };
         extraConfig = mkOption {
           type = types.str;
-          default = "{}";
+          default = "";
           description = "Caelestia CLI extra configs written to cli.json";
         };
       };
     };
   };
 
-  config = let
-    cli = cfg.cli.package;
-    shell = cfg.package;
-  in
+  config =
+    let
+      cli = cfg.cli.package;
+      shell = cfg.package;
+    in
     lib.mkIf cfg.enable {
       systemd.user.services.caelestia = lib.mkIf cfg.systemd.enable {
         Unit = {
           Description = "Caelestia Shell Service";
-          After = [cfg.systemd.target];
-          PartOf = [cfg.systemd.target];
-          X-Restart-Triggers = lib.mkIf (cfg.settings != {}) [
+          After = [ cfg.systemd.target ];
+          PartOf = [ cfg.systemd.target ];
+          X-Restart-Triggers = lib.mkIf (cfg.settings != { }) [
             "${config.xdg.configFile."caelestia/shell.json".source}"
           ];
         };
@@ -98,17 +103,16 @@ in {
           Restart = "on-failure";
           RestartSec = "5s";
           TimeoutStopSec = "5s";
-          Environment =
-            [
-              "QT_QPA_PLATFORM=wayland;xcb"
-            ]
-            ++ cfg.systemd.environment;
+          Environment = [
+            "QT_QPA_PLATFORM=wayland;xcb"
+          ]
+          ++ cfg.systemd.environment;
 
           Slice = "session.slice";
         };
 
         Install = {
-          WantedBy = [cfg.systemd.target];
+          WantedBy = [ cfg.systemd.target ];
         };
       };
 
@@ -121,10 +125,15 @@ in {
               (lib.recursiveUpdate c.settings)
               builtins.toJSON
             ];
+          shouldGenerate = c: c.extraConfig != "" || c.settings != { };
         in
         {
-          "caelestia/shell.json".text = mkConfig cfg;
-          "caelestia/cli.json".text = mkConfig cfg.cli;
+          "caelestia/shell.json" = lib.mkIf (shouldGenerate cfg) {
+            text = mkConfig cfg;
+          };
+          "caelestia/cli.json" = lib.mkIf (shouldGenerate cfg.cli) {
+            text = mkConfig cfg.cli;
+          };
         };
 
       home.packages = [ shell ] ++ lib.optional cfg.cli.enable cli;
